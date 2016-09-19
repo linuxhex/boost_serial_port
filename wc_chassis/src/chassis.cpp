@@ -56,38 +56,33 @@ void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int Counts)
 
 bool Chassis_mcu::getCSpeed(double &v, double &w)
 {
-//  if (abs(delta_counts_left_) > 2000) {
-//    std::cout << "err delta_counts_left_:" << delta_counts_left_ << std::endl;
-//    delta_counts_left_ = last_delta_counts_left_;
-//  } else {
-//    last_delta_counts_left_ = delta_counts_left_;
-//  }
-//  if (abs(delta_counts_right_) > 2000) {
-//    std::cout << "err delta_counts_right_:" << delta_counts_right_ << std::endl;
-//    delta_counts_right_ = last_delta_counts_right_;
-//  } else {
-//    last_delta_counts_right_ = delta_counts_right_;
-//  }
-//  if (abs(delta_counts_left_) > DELTA_COUNT_TH || abs(delta_counts_left_) > DELTA_COUNT_TH) {
-//    std::cout << "err delta_counts_, set motor_driver_status as false" << std::endl;
-//    motor_driver_status = false;
-//  } else {
-//    motor_driver_status = true;
-//  }
-//  const double t = 0.05;
-//  double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_left_ * M_PI) / Counts_;  // 200000;  // 81920
-//  double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_right_ * M_PI) / Counts_;  // 200000;  // 81920
+  if (abs(delta_counts_front_) > 2000) {
+    std::cout << "err delta_counts_front_:" << delta_counts_front_ << std::endl;
+    delta_counts_front_ = last_delta_counts_front_;
+  } else {
+    last_delta_counts_front_ = delta_counts_front_;
+  }
+  if (abs(delta_counts_rear_) > 2000) {
+    std::cout << "err delta_counts_rear_:" << delta_counts_rear_ << std::endl;
+    delta_counts_rear_ = last_delta_counts_rear_;
+  } else {
+    last_delta_counts_rear_ = delta_counts_rear_;
+  }
 
-//  double dx = (r_wheel_pos + l_wheel_pos) * 0.5;
-//  double da = (r_wheel_pos - l_wheel_pos) / Axle_;
+  const double t = 0.05;
+  double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_front_ * M_PI) / Counts_;  // 200000;  // 81920
+  double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_rear_ * M_PI) / Counts_;  // 200000;  // 81920
 
-//  if ((fabs(t) > 10e-3) && (fabs(t) < 10e3)) {
-//    v = dx / t;
-//    w = da / t;
-//  } else {
-//    v = 0;
-//    w = 0;
-//  }
+  double dx = (r_wheel_pos + l_wheel_pos) * 0.5;
+  double da = (r_wheel_pos - l_wheel_pos) / Axle_;
+
+  if ((fabs(t) > 10e-3) && (fabs(t) < 10e3)) {
+    v = dx / t;
+    w = da / t;
+  } else {
+    v = 0;
+    w = 0;
+  }
   return true;
 }
 
@@ -99,38 +94,38 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a) {
       odom_y_ = 0;
       odom_a_ = 0;
 
-      last_counts_left_ = counts_left_;
-      last_counts_right_ = counts_right_;
-      if ((abs(last_counts_left_) > 0) && (abs(last_counts_right_) > 0)) {
+      last_counts_front_ = counts_front_;
+      last_counts_rear_ = counts_rear_;
+      if ((abs(last_counts_front_) > 0) && (abs(last_counts_rear_) > 0)) {
         first_odo_ = false;
       }
       return false;
     }
 
-    int delta_counts_left = (counts_left_ - last_counts_left_);
-    int delta_counts_right = (counts_right_ - last_counts_right_);
+    int delta_counts_front = (counts_front_ - last_counts_front_);
+    int delta_counts_rear = (counts_rear_ - last_counts_rear_);
 
-    if (delta_counts_left > 10000) {
-      delta_counts_left -= 65536;
-    } else if (delta_counts_left < -10000) {
-      delta_counts_left += 65536;
+    if (delta_counts_front > 10000) {
+      delta_counts_front -= 65536;
+    } else if (delta_counts_front < -10000) {
+      delta_counts_front += 65536;
     }
-    if (delta_counts_right > 10000) {
-      delta_counts_right -= 65536;
-    } else if (delta_counts_right < -10000) {
-      delta_counts_right += 65536;
-    }
-
-
-    if (abs(delta_counts_right) > 2000) {
-      std::cout << "err delta_counts_right: " << delta_counts_right << std::endl;
-    }
-    if (abs(delta_counts_left) > 2000) {
-      std::cout << "err delta_counts_left: " << delta_counts_left << std::endl;
+    if (delta_counts_rear > 10000) {
+      delta_counts_rear -= 65536;
+    } else if (delta_counts_rear < -10000) {
+      delta_counts_rear += 65536;
     }
 
-    double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_left * M_PI) / Counts_;  // 200000;  // 81920
-    double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_right * M_PI) / Counts_;  // 200000;  // 81920
+
+    if (abs(delta_counts_rear) > 2000) {
+      std::cout << "err delta_counts_rear: " << delta_counts_rear << std::endl;
+    }
+    if (abs(delta_counts_front) > 2000) {
+      std::cout << "err delta_counts_front: " << delta_counts_front << std::endl;
+    }
+
+    double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_front * M_PI) / Counts_;  // 200000;  // 81920
+    double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_rear * M_PI) / Counts_;  // 200000;  // 81920
 
     double dx = (r_wheel_pos + l_wheel_pos) * 0.5;
     double da = (r_wheel_pos - l_wheel_pos) / Axle_;
@@ -150,12 +145,12 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a) {
     y = odom_y_;
     a = odom_a_;
 
-    last_counts_left_ = counts_left_;
-    last_counts_right_ = counts_right_;
+    last_counts_front_ = counts_front_;
+    last_counts_rear_ = counts_rear_;
 
     return true;
 }
-int Chassis_mcu::getLPos()
+int Chassis_mcu::getFPos()
 {
   unsigned char send[1024] = {0};
   int len = 0;
@@ -170,21 +165,19 @@ int Chassis_mcu::getLPos()
     transfer->Read_data(rec, rlen, 23, 500);
   }
 
-
   if (rlen == 23) {
     for (int i = 0; i < rlen; ++i) {
       if (IRQ_CH(rec[i])) {
-        counts_left_ = GetPos(0);
+        counts_front_ = GetPos(0);
         return GetDelta(0);
       }
     }
   }
-  return delta_counts_left_;
-    return 0;
+  return delta_counts_front_;
 }
 
 int Chassis_mcu::getRPos()
-{/*
+{
   unsigned char send[1024] = {0};
   int len = 0;
 
@@ -193,25 +186,24 @@ int Chassis_mcu::getRPos()
 
   CreateRPos(send, &len, 1);
 
-  if (transfer_) {
-    transfer_->Send_data(send, len);
-    transfer_->Read_data(rec, rlen, 23, 500);
+  if (transfer) {
+    transfer->Send_data(send, len);
+    transfer->Read_data(rec, rlen, 23, 500);
   }
 
   if (rlen == 23) {
     for (int i = 0; i < rlen; ++i) {
       if (IRQ_CH(rec[i])) {
-        counts_right_ = GetPos(1);
+        counts_rear_ = GetPos(1);
         return GetDelta(1);
       }
     }
   }
-  return delta_counts_right_;*/
-  return 0;
+  return delta_counts_rear_;
 }
 void Chassis_mcu::comunication(void) {
-  delta_counts_left_ = getLPos();
+  delta_counts_front_ = getFPos();
   usleep(1000);
-  delta_counts_right_ = getRPos();
+  delta_counts_rear_ = getRPos();
   usleep(1000);
 }

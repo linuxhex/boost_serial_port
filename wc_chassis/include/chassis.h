@@ -1,5 +1,5 @@
-#ifndef _CHASSIS_MCU_
-#define _CHASSIS_MCU_
+#ifndef CHASSIS_H
+#define CHASSIS_H
 
 #include <string>
 #include <map>
@@ -19,10 +19,10 @@ public:
 private:
     bool is_auto_;
 
-    int getLPos();
+    int getFPos();
     int getRPos();
-    int delta_counts_left_;
-    int delta_counts_right_;
+    int delta_counts_front_;
+    int delta_counts_rear_;
 
     float tha_zero_;
 
@@ -42,10 +42,12 @@ private:
     double odom_v;
     double odom_w;
 
-    int last_counts_left_;
-    int last_counts_right_;
-    int counts_left_;
-    int counts_right_;
+    int last_counts_front_;
+    int last_counts_rear_;
+    int last_delta_counts_front_;
+    int last_delta_counts_rear_;
+    int counts_front_;
+    int counts_rear_;
 
     unsigned char send_[10];
     unsigned char rec_[20];
@@ -57,4 +59,4 @@ private:
 
 };
 
-#endif
+#endif // CHASSIS_H

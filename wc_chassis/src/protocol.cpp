@@ -19,20 +19,20 @@ MSGStates rstatus;
 
 #ifdef MCU
 
-int volatile m_left_pos = 0;
-int volatile m_right_pos = 0;
-int volatile m_left_delta = 0;
-int volatile m_right_delta = 0;
+int volatile m_front_pos = 0;
+int volatile m_rear_pos = 0;
+int volatile m_front_delta = 0;
+int volatile m_rear_delta = 0;
 
 unsigned char send[1024] = {0};
 int len = 0;
 
 #else
 
-int m_left_pos = 0;
-int m_right_pos = 0;
-int volatile m_left_delta = 0;
-int volatile m_right_delta = 0;
+int m_front_pos = 0;
+int m_rear_pos = 0;
+int volatile m_front_delta = 0;
+int volatile m_rear_delta = 0;
 unsigned int m_di = 0;
 unsigned int cnt_time = 0;
 unsigned int m_ad[4] = {0};
@@ -176,11 +176,11 @@ int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
             break;
         case POS:
             if (protol->data.pos_.axis_id == 0){
-                m_left_delta = protol->data.pos_.position;
-            m_left_pos = protol->data.pos_.system_time;
+                m_front_delta = protol->data.pos_.position;
+            m_front_pos = protol->data.pos_.system_time;
             }else if (protol->data.pos_.axis_id == 1){
-                m_right_delta = protol->data.pos_.position;
-            m_right_pos = protol->data.pos_.system_time;
+                m_rear_delta = protol->data.pos_.position;
+            m_rear_pos = protol->data.pos_.system_time;
             }
             break;
         case TIME:
@@ -195,7 +195,7 @@ int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
                 CreatePos(send,&len,0,m_left_pos);
                 uart0SendStr(send,len);
             }else if(protol->data.angle_.axis_id == 0){
-                CreatePos(send,&len,1,m_right_pos);
+                CreatePos(send,&len,1,m_rear_pos);
                 uart0SendStr(send,len);
             }
 #endif
@@ -274,18 +274,18 @@ float GetAD(int id){
 int GetDelta(int id)
 {
   if (id == 0) {
-    return m_left_delta;
+    return m_front_delta;
   } else{
-    return m_right_delta;
+    return m_rear_delta;
   }
 }
 
 
 int GetPos(int id){
     if(id == 0){
-        return m_left_pos;
+        return m_front_pos;
     }else {
-        return m_right_pos;
+        return m_rear_pos;
     }
 }
 

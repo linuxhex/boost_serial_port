@@ -42,7 +42,7 @@ int Write(BufList* list,unsigned char* pWrite,int len){
 int Read(BufList* list,unsigned char* pRead,int* len){
 
     if(list->m_iOffset>0){
-        assert(list->m_pBuffer!=NULL);
+        //assert(list->m_pBuffer!=NULL);
         memset(pRead,0,list->m_iOffset);
         memcpy(pRead,list->m_pBuffer,list->m_iOffset);
         *len = list->m_iOffset;

@@ -14,18 +14,15 @@ SerialPort::SerialPort()
     m_pSerialPort = NULL;
     m_threadRun = NULL;
 
-
     m_lReadBuffer.Init(1024);
     memset(m_szWriteBuffer,0,1024);
     m_nWriteBufferSize = 0;
-
     //LOGS("SSS").Enable();
 }
 
 SerialPort::~SerialPort()
 {
-    if (m_pSerialPort != NULL)
-    {
+    if (m_pSerialPort != NULL){
         delete m_pSerialPort;
         m_pSerialPort = NULL;
     }
@@ -66,8 +63,7 @@ bool SerialPort::open()
 
 void SerialPort::Send_data(unsigned char* s_data, unsigned short len )
 {
-    if (len > 1024)
-    {
+    if (len > 1024){
         return;
     }
     m_lReadBuffer.Clear();
@@ -83,9 +79,8 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
         std::cout<<"read data err"<<std::endl;
         return;
     }
-
     //m_szReadCallBack.Write(m_szReadTemp,bytes_transferred);
-    std::cout << "data" << m_szReadTemp << std::endl;
+    //std::cout << "data" << m_szReadTemp << std::endl;
     m_lReadBuffer.Write(m_szReadTemp,bytes_transferred);
 
     std::string str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
@@ -100,10 +95,8 @@ void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout 
     int len_tmp = 0;
 
     while(1){
-
         len_tmp = m_lReadBuffer.Size();
         if ( len_tmp >= need){
-
             //std::cout<<"read data over"<<std::endl;
             break;
         }
@@ -120,16 +113,13 @@ void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout 
 int SerialPort::ThreadRun()
 {
     try{
-        while (1)
-        {
-            if (open())
-            {
+        while (1){
+            if (open()){
                 read();
                 m_ios.run();
                 m_ios.reset();
                 this_thread::interruption_point();
             }
-
             this_thread::interruption_point();
             usleep(1000);
         }
@@ -167,7 +157,7 @@ void SerialPort::EndThread()
 
 void SerialPort::read()
 {
-    std::cout << "m_szReadTemp" << m_szReadTemp << std::endl;
+    //std::cout << "m_szReadTemp" << m_szReadTemp << std::endl;
     m_pSerialPort->async_read_some(boost::asio::buffer(m_szReadTemp,1024),
         boost::bind(&SerialPort::read_callback,this,
         boost::asio::placeholders::error,   boost::asio::placeholders::bytes_transferred));
@@ -176,7 +166,6 @@ void SerialPort::read()
 void SerialPort::write()
 {
     m_pSerialPort->write_some(boost::asio::buffer(m_szWriteBuffer,m_nWriteBufferSize));
-
 }
 
 void SerialPort::Init(int CommNO)
