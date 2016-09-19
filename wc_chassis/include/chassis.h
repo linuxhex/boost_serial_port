@@ -11,7 +11,7 @@ public:
     Chassis_mcu();
     ~Chassis_mcu();
 
-    void Init(float H,float Dia_F,float Dia_B,float Axle,int Counts);
+    void Init(float,float,float,float,int,int);
     bool getOdo(double &x,double &y,double &a);
     void comunication(void);
     bool getCSpeed(double &v, double &w);
@@ -30,7 +30,8 @@ private:
     float Dia_F_;
     float Dia_B_;
     float Axle_;
-    int Counts_;
+    int FCounts_;
+    int RCounts_;
     int reduction_ratio_;
 
     SerialPort* transfer = NULL;

@@ -18,7 +18,8 @@ float H     = 0.0;
 float Dia_F = 0.0;
 float Dia_B = 0.0;
 float Axle  = 0.0;
-int Counts  = 0;
+int FCounts  = 0;
+int RCounts  = 0;
 
 void publishOdom(void){
   nav_msgs::Odometry odom;
@@ -69,7 +70,8 @@ void initParam(void)
     nh.param("B_DIA", Dia_B, static_cast<float>(0.3));
     nh.param("H", H, static_cast<float>(0.92));
     nh.param("AXLE", Axle, static_cast<float>(0.715));
-    nh.param("counts", Counts, 4000);
+    nh.param("front_counts", FCounts, 4000);
+    nh.param("rear_counts", RCounts, 4000);
 }
 
 int main(int argc, char **argv)
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
  ros::Rate loop(10);
  initParam();
  Chassis_mcu g_chassis_mcu;
- g_chassis_mcu.Init(H,Dia_F,Dia_B,Axle,Counts);
+ g_chassis_mcu.Init(H,Dia_F,Dia_B,Axle,FCounts,RCounts);
 
  while (ros::ok()) {
 

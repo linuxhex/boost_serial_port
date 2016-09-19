@@ -17,7 +17,7 @@ Chassis_mcu::~Chassis_mcu()
    }
 }
 
-void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int Counts)
+void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int FCounts,int RCounts)
 {
 
   if ((H > 0) && (H < 2.0)) {
@@ -44,10 +44,16 @@ void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int Counts)
     std::cout << "Axle err value:" <<Axle<< std::endl;
   }
 
-  if ((Counts > 0) && (Counts < 11000)) {
-    Counts_ = Counts;
+  if ((FCounts > 0) && (FCounts < 11000)) {
+    FCounts_ = FCounts;
   } else {
-    std::cout << "Counts err value:" <<Counts<< std::endl;
+    std::cout << "FCounts err value:" << FCounts<< std::endl;
+  }
+
+  if ((RCounts > 0) && (RCounts < 11000)) {
+    RCounts_ = RCounts;
+  } else {
+    std::cout << "RCounts err value:" << RCounts<< std::endl;
   }
 
   this->transfer->Init(115200);
@@ -70,19 +76,10 @@ bool Chassis_mcu::getCSpeed(double &v, double &w)
   }
 
   const double t = 0.05;
-  double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_front_ * M_PI) / Counts_;  // 200000;  // 81920
-  double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_rear_ * M_PI) / Counts_;  // 200000;  // 81920
 
-  double dx = (r_wheel_pos + l_wheel_pos) * 0.5;
-  double da = (r_wheel_pos - l_wheel_pos) / Axle_;
+  w = static_cast<double>(delta_counts_front_ * M_PI_2) / FCounts_ / t;  // 200000;  // 81920
+  v = static_cast<double>(Dia_B_ * delta_counts_rear_ * M_PI) / RCounts_ * 10;  // 200000;  // 81920
 
-  if ((fabs(t) > 10e-3) && (fabs(t) < 10e3)) {
-    v = dx / t;
-    w = da / t;
-  } else {
-    v = 0;
-    w = 0;
-  }
   return true;
 }
 
@@ -124,15 +121,21 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a) {
       std::cout << "err delta_counts_front: " << delta_counts_front << std::endl;
     }
 
-    double l_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_front * M_PI) / Counts_;  // 200000;  // 81920
-    double r_wheel_pos = static_cast<double>(Dia_B_ * delta_counts_rear * M_PI) / Counts_;  // 200000;  // 81920
 
-    double dx = (r_wheel_pos + l_wheel_pos) * 0.5;
-    double da = (r_wheel_pos - l_wheel_pos) / Axle_;
+    double speed = 0.0;
+    double angle = 0.0;
 
-    odom_x_ += dx * cos(odom_a_);
-    odom_y_ += dx * sin(odom_a_);
+    angle = static_cast<double>(delta_counts_front * M_PI_2) / FCounts_;  // 200000;  // 81920
+    speed = static_cast<double>(Dia_B_ * delta_counts_rear * M_PI) / RCounts_ * 10;  // 200000;  // 81920
+
+
+    double dd = 0.1 * speed * cos(angle);
+    double da = 0.1 * speed * sin(angle) / H_;
+
     odom_a_ += da;
+    odom_x_ += dd * cos(odom_a_);
+    odom_y_ += dd * sin(odom_a_);
+
 
     while (odom_a_ <= - M_PI) {
       odom_a_ += M_PI*2;
@@ -162,10 +165,10 @@ int Chassis_mcu::getFPos()
 
   if (transfer) {
     transfer->Send_data(send, len);
-    transfer->Read_data(rec, rlen, 23, 500);
+    transfer->Read_data(rec, rlen, 15, 500);
   }
 
-  if (rlen == 23) {
+  if (rlen == 15) {
     for (int i = 0; i < rlen; ++i) {
       if (IRQ_CH(rec[i])) {
         counts_front_ = GetPos(0);
@@ -188,10 +191,10 @@ int Chassis_mcu::getRPos()
 
   if (transfer) {
     transfer->Send_data(send, len);
-    transfer->Read_data(rec, rlen, 23, 500);
+    transfer->Read_data(rec, rlen, 15, 500);
   }
 
-  if (rlen == 23) {
+  if (rlen == 15) {
     for (int i = 0; i < rlen; ++i) {
       if (IRQ_CH(rec[i])) {
         counts_rear_ = GetPos(1);

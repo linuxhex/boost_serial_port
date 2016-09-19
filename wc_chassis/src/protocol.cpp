@@ -44,19 +44,19 @@ void SInit_Proto(AGVProtocol* agvProtocol,CMDTypes type){
     if(!bs_init){
         Init(&(sendProtocol.buflist),50);
 
-        agvProtocol->header[0] = HEADER0;
-        agvProtocol->header[1] = HEADER1;
-        agvProtocol->header[2] = HEADER2;
-        agvProtocol->header[3] = HEADER3;
-        agvProtocol->header[4] = HEADER4;
-        agvProtocol->header[5] = HEADER5;
-#ifdef MCU
-        agvProtocol->srcaddr = DEVCADDR;
-        agvProtocol->dstaddr = HOSTADDR;
-#else
-        agvProtocol->srcaddr = HOSTADDR;
-        agvProtocol->dstaddr = DEVCADDR;
-#endif
+//        agvProtocol->header[0] = HEADER0;
+//        agvProtocol->header[1] = HEADER1;
+//        agvProtocol->header[2] = HEADER2;
+//        agvProtocol->header[3] = HEADER3;
+//        agvProtocol->header[4] = HEADER4;
+//        agvProtocol->header[5] = HEADER5;
+//#ifdef MCU
+//        agvProtocol->srcaddr = DEVCADDR;
+//        agvProtocol->dstaddr = HOSTADDR;
+//#else
+//        agvProtocol->srcaddr = HOSTADDR;
+//        agvProtocol->dstaddr = DEVCADDR;
+//#endif
         bs_init = 1;
     }
 
@@ -75,20 +75,20 @@ void RInit_Proto(AGVProtocol* agvProtocol){
 
         Init(&(recProtocol.buflist),1024);
 
-        agvProtocol->header[0] = HEADER0;
-        agvProtocol->header[1] = HEADER1;
-        agvProtocol->header[2] = HEADER2;
-        agvProtocol->header[3] = HEADER3;
-        agvProtocol->header[4] = HEADER4;
-        agvProtocol->header[5] = HEADER5;
+//        agvProtocol->header[0] = HEADER0;
+//        agvProtocol->header[1] = HEADER1;
+//        agvProtocol->header[2] = HEADER2;
+//        agvProtocol->header[3] = HEADER3;
+//        agvProtocol->header[4] = HEADER4;
+//        agvProtocol->header[5] = HEADER5;
 
-#ifdef MCU
-        agvProtocol->srcaddr = HOSTADDR;
-        agvProtocol->dstaddr = DEVCADDR;
-#else
-        agvProtocol->srcaddr = DEVCADDR;
-        agvProtocol->dstaddr = HOSTADDR;
-#endif
+//#ifdef MCU
+//        agvProtocol->srcaddr = HOSTADDR;
+//        agvProtocol->dstaddr = DEVCADDR;
+//#else
+//        agvProtocol->srcaddr = DEVCADDR;
+//        agvProtocol->dstaddr = HOSTADDR;
+//#endif
 
 
         agvProtocol->type = NONE;
@@ -101,16 +101,15 @@ void RInit_Proto(AGVProtocol* agvProtocol){
         Clear(&(agvProtocol->buflist));
 
         rs_init = 1;
-
-        rstatus = SYNCHEAD0;
+        rstatus = CMDFIELD;
+        //rstatus = SYNCHEAD0;
     }
 
 }
 unsigned char checksum(unsigned char* ch ,int len){
     unsigned char sum = 0;
     int i = 0;
-    for(; i < len; ++i)
-    {
+    for(; i < len; ++i){
         sum += ch[i];
     }
     sum &= 0x00ff;
@@ -155,21 +154,22 @@ int Coder(unsigned char* ch,int* len,AGVProtocol* protol,Data* data){
             break;
     }
 
-    Write(&(protol->buflist),protol->header,6);
-    Write(&(protol->buflist),&(protol->srcaddr),1);
-    Write(&(protol->buflist),&(protol->dstaddr),1);
+//    Write(&(protol->buflist),protol->header,6);
+//    Write(&(protol->buflist),&(protol->srcaddr),1);
+//    Write(&(protol->buflist),&(protol->dstaddr),1);
     Write(&(protol->buflist),(unsigned char*)&(protol->type),1);
     Write(&(protol->buflist),(unsigned char*)&(protol->len),1);
     Write(&(protol->buflist),(unsigned char*)&(protol->data),protol->len);
 
     Read(&(protol->buflist),ch,len);
-    protol->chksum = checksum(ch+6,*len-6);
+    //protol->chksum = checksum(ch+6,*len-6);
+    protol->chksum = checksum(ch,*len);
     ch[*len] = protol->chksum;
     (*len)++;
     return *len;
 }
 int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
-    memcpy(&(protol->data), ch + 4, sizeof(Data));
+    memcpy(&(protol->data), ch + 2, sizeof(Data));
 
     switch(protol->type){
         case CURRENT:
@@ -177,10 +177,10 @@ int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
         case POS:
             if (protol->data.pos_.axis_id == 0){
                 m_front_delta = protol->data.pos_.position;
-            m_front_pos = protol->data.pos_.system_time;
+                m_front_pos = protol->data.pos_.system_time;
             }else if (protol->data.pos_.axis_id == 1){
                 m_rear_delta = protol->data.pos_.position;
-            m_rear_pos = protol->data.pos_.system_time;
+                m_rear_pos = protol->data.pos_.system_time;
             }
             break;
         case TIME:
@@ -190,15 +190,15 @@ int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
         case RSPEED:
             break;
         case RPOS:
-#ifdef MCU
-            if(protol->data.angle_.axis_id == 0){
-                CreatePos(send,&len,0,m_left_pos);
-                uart0SendStr(send,len);
-            }else if(protol->data.angle_.axis_id == 0){
-                CreatePos(send,&len,1,m_rear_pos);
-                uart0SendStr(send,len);
-            }
-#endif
+//#ifdef MCU
+//            if(protol->data.angle_.axis_id == 0){
+//                CreatePos(send,&len,0,m_left_pos);
+//                uart0SendStr(send,len);
+//            }else if(protol->data.angle_.axis_id == 0){
+//                CreatePos(send,&len,1,m_rear_pos);
+//                uart0SendStr(send,len);
+//            }
+//#endif
             break;
         case RTIME:
             break;
@@ -300,49 +300,49 @@ int IRQ_CH(unsigned char c){
 #endif
 
     switch(rstatus){
-    case SYNCHEAD0:
-        if(c==HEADER0) rstatus = SYNCHEAD1;
-        else rstatus = SYNCHEAD0;
-        break;
-    case SYNCHEAD1:
-        if(c==HEADER1) rstatus = SYNCHEAD2;
-        else rstatus = SYNCHEAD0;
-        break;
-    case SYNCHEAD2:
-        if(c==HEADER2) rstatus = SYNCHEAD3;
-        else rstatus = SYNCHEAD0;
-        break;
-    case SYNCHEAD3:
-        if(c==HEADER3) rstatus = SYNCHEAD4;
-        else rstatus = SYNCHEAD0;
-        break;
-    case SYNCHEAD4:
-        if(c==HEADER4) rstatus = SYNCHEAD5;
-        else rstatus = SYNCHEAD0;
-        break;
-    case SYNCHEAD5:
-        if(c==HEADER5){
-            Clear(&(recProtocol.buflist));
-            rstatus = SRCADDR;
-        }
-        else rstatus = SYNCHEAD0;
-        break;
-    case SRCADDR:
-        if(recProtocol.srcaddr == c)
-        {
-            Write(&(recProtocol.buflist),&c,1);
-            rstatus = DSTADDR;
-        }
-        else rstatus = SYNCHEAD0;
-        break;
-    case DSTADDR:
-        if(recProtocol.dstaddr == c)
-        {
-            Write(&(recProtocol.buflist),&c,1);
-            rstatus = CMDFIELD;
-        }
-        else rstatus = SYNCHEAD0;
-        break;
+//    case SYNCHEAD0:
+//        if(c==HEADER0) rstatus = SYNCHEAD1;
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SYNCHEAD1:
+//        if(c==HEADER1) rstatus = SYNCHEAD2;
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SYNCHEAD2:
+//        if(c==HEADER2) rstatus = SYNCHEAD3;
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SYNCHEAD3:
+//        if(c==HEADER3) rstatus = SYNCHEAD4;
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SYNCHEAD4:
+//        if(c==HEADER4) rstatus = SYNCHEAD5;
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SYNCHEAD5:
+//        if(c==HEADER5){
+//            Clear(&(recProtocol.buflist));
+//            rstatus = SRCADDR;
+//        }
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case SRCADDR:
+//        if(recProtocol.srcaddr == c)
+//        {
+//            Write(&(recProtocol.buflist),&c,1);
+//            rstatus = DSTADDR;
+//        }
+//        else rstatus = SYNCHEAD0;
+//        break;
+//    case DSTADDR:
+//        if(recProtocol.dstaddr == c)
+//        {
+//            Write(&(recProtocol.buflist),&c,1);
+//            rstatus = CMDFIELD;
+//        }
+//        else rstatus = SYNCHEAD0;
+//        break;
     case CMDFIELD:
         recProtocol.type = (CMDTypes)c;
         Write(&(recProtocol.buflist),&c,1);
@@ -355,37 +355,37 @@ int IRQ_CH(unsigned char c){
         break;
     case DATFIELD:
         Write(&(recProtocol.buflist),&c,1);
-        if(Size(&(recProtocol.buflist)) < (recProtocol.len + 4)){
+        //if(Size(&(recProtocol.buflist)) < (recProtocol.len + 4)){
 
-        }else{
+        //}else{
             rstatus = CHKSUM;
-        }
+       // }
         break;
     case CHKSUM:
 
         Read(&(recProtocol.buflist),&tmp[0],&len);
         if(c == checksum(&tmp[0],len)){
             if(!Decoder(&recProtocol,&tmp[0],len)){
-                rstatus = SYNCHEAD0;
+                rstatus = CMDFIELD;
 #ifdef MCU
                 zyIrqEnable();
 #endif
                 return 0;
             }
         }else{
-      std::string str = cComm::ByteToHexString(tmp, len);
-      std::string strc = cComm::ByteToHexString(&c, 1);
-      std::cout << "check sum err: " << str << " c: " << strc << std::endl;
+          std::string str = cComm::ByteToHexString(tmp, len);
+          std::string strc = cComm::ByteToHexString(&c, 1);
+          std::cout << "check sum err: " << str << " c: " << strc << std::endl;
         }
 
-        rstatus = SYNCHEAD0;
+        rstatus = CMDFIELD;
 #ifdef MCU
         zyIrqEnable();
 #endif
         return 1;
         break;
     default:
-        rstatus = SYNCHEAD0;
+        rstatus = CMDFIELD;
         rs_init = 1;
     }
 #ifdef MCU
