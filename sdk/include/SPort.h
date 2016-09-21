@@ -15,14 +15,15 @@ public:
    // void Init(std::string strPortName,int baud);
     void Send_data(unsigned char* s_data,unsigned short len);
     void Read_data(unsigned char* r_data,int &len,int need,int timeout);
-
+ ByteList m_lReadBuffer;
 protected:
 private:
     unsigned char m_szReadTemp[1024];
-    ByteList m_lReadBuffer;
 
     unsigned char m_szWriteBuffer[1024];
     int m_nWriteBufferSize;
+
+
 
     int nCommNO;
     std::string portName_;

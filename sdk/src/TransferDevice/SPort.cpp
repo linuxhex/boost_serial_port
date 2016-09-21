@@ -4,7 +4,8 @@
 
 #include "SPort.h"
 #include "Comm.h"
-
+extern unsigned char data[1024];
+extern int data_len;
 using namespace boost;
 using namespace boost::asio;
 
@@ -46,6 +47,7 @@ bool SerialPort::open()
         std::cout<<"linux serial port"<<strComNo<<std::endl;
     #endif
         m_pSerialPort = new boost::asio::serial_port(m_ios ,strComNo);
+        std::cout<<"m_pSerialPort" <<std::endl;
         m_pSerialPort->set_option(boost::asio::serial_port::baud_rate(115200));
         m_pSerialPort->set_option(boost::asio::serial_port::flow_control(boost::asio::serial_port::flow_control::none));
         m_pSerialPort->set_option(boost::asio::serial_port::parity(boost::asio::serial_port::parity::none));
@@ -72,6 +74,7 @@ void SerialPort::Send_data(unsigned char* s_data, unsigned short len )
     memcpy(m_szWriteBuffer,s_data,len);
     write();
 }
+
 void SerialPort::read_callback( const boost::system::error_code& error, std::size_t bytes_transferred)
 {
 
@@ -81,10 +84,42 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
     }
     //m_szReadCallBack.Write(m_szReadTemp,bytes_transferred);
     //std::cout << "data" << m_szReadTemp << std::endl;
-    m_lReadBuffer.Write(m_szReadTemp,bytes_transferred);
+    //int last_set = m_lReadBuffer.Size();
 
-    std::string str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
+    m_lReadBuffer.Write(m_szReadTemp,bytes_transferred);
+    int len = 0;
+    m_lReadBuffer.Read(data,len);
+    std::cout<<"[wc_chassis] len ="<< len <<std::endl;
+
+    std::string str;
+    if(len>=30){
+       str = cComm::ByteToHexString(data,len);
+       std::cout<<" Read data :"<<str<<std::endl;
+    }
+
+    str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
     std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
+
+    str = cComm::ByteToHexString((unsigned char *)m_lReadBuffer.m_pBuffer,m_lReadBuffer.Size());
+    std::cout<<"Buff Read len:"<<m_lReadBuffer.Size()<<" data:"<<str<<std::endl;
+
+    for(int i=0;i<len;i++){
+        std::cout<<"[wc_chassis] cc i ="<< i <<"data[i]" <<data[i]<<std::endl;
+        if(data[i] == 0xab){
+            m_lReadBuffer.move(i+1);
+            if (i >= 29) {
+               data_len  = 30;
+               for(int j=0,k=i-29;k<=i;k++,j++){
+                   if(j == k)break;
+                   data[j] = data[k];
+               }
+            }
+            break;
+        }
+    }
+
+    //str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
+    //std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
 
     read();
 }
@@ -108,6 +143,7 @@ void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout 
         }
     }
     m_lReadBuffer.Read(r_data,len);
+ //   m_lReadBuffer.Clear();
 }
 
 int SerialPort::ThreadRun()
@@ -132,6 +168,8 @@ int SerialPort::ThreadRun()
 bool SerialPort::BeginThread()
 {
     EndThread();
+
+    std::cout << "BeginThread::Init" << std::endl;
 
     m_threadRun = new thread(bind(&SerialPort::ThreadRun,this));
     if (m_threadRun){
@@ -171,5 +209,7 @@ void SerialPort::write()
 void SerialPort::Init(int CommNO)
 {
     nCommNO = CommNO;
+    std::cout << "SerialPort::Init" << std::endl;
+
     BeginThread();
 }

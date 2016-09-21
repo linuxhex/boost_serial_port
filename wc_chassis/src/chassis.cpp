@@ -1,23 +1,31 @@
 #include "chassis.h"
 #include "SPort.h"
 #include "protocol.h"
+#include <ros/ros.h>
+extern SerialPort *transfer;
+extern unsigned char data[1024];
+extern int data_len;
 
 Chassis_mcu::Chassis_mcu()
 {
-    if(this->transfer == NULL){
-        this->transfer = new SerialPort();
-    }
+//    if(this->transfer == NULL){
+//        this->transfer = new SerialPort();
+//    }
+//    std::cout << "new transfer init:" << std::endl;
+    std::cout << "transfer init:" << std::endl;
+
+
 }
 
 Chassis_mcu::~Chassis_mcu()
 {
-   if(this->transfer != NULL){
-       delete this->transfer;
-       this->transfer = NULL;
-   }
+//   if(this->transfer != NULL){
+//       delete this->transfer;
+//       this->transfer = NULL;
+//   }
 }
 
-void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int FCounts,int RCounts)
+void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int FCounts,int RCounts,float DeltaT)
 {
 
   if ((H > 0) && (H < 2.0)) {
@@ -56,81 +64,95 @@ void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle, int FCounts
     std::cout << "RCounts err value:" << RCounts<< std::endl;
   }
 
-  this->transfer->Init(115200);
+  DeltaT_ = DeltaT;
+
+//  std::cout << "new transfer init:" << std::endl;
+//  transfer = new SerialPort();
+
+//  transfer->Init(115200);
 
 }
 
-bool Chassis_mcu::getCSpeed(double &v, double &w)
-{
-  if (abs(delta_counts_front_) > 2000) {
-    std::cout << "err delta_counts_front_:" << delta_counts_front_ << std::endl;
-    delta_counts_front_ = last_delta_counts_front_;
-  } else {
-    last_delta_counts_front_ = delta_counts_front_;
-  }
-  if (abs(delta_counts_rear_) > 2000) {
-    std::cout << "err delta_counts_rear_:" << delta_counts_rear_ << std::endl;
-    delta_counts_rear_ = last_delta_counts_rear_;
-  } else {
-    last_delta_counts_rear_ = delta_counts_rear_;
-  }
 
-  const double t = 0.05;
 
-  w = static_cast<double>(delta_counts_front_ * M_PI_2) / FCounts_ / t;  // 200000;  // 81920
-  v = static_cast<double>(Dia_B_ * delta_counts_rear_ * M_PI) / RCounts_ * 10;  // 200000;  // 81920
+bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w) {
 
-  return true;
-}
 
-bool Chassis_mcu::getOdo(double &x, double &y, double &a) {
+    float getTheta;
+    ROS_INFO("[wc_chassis] cc data_len = %d",data_len);
 
-    comunication();
+    if (data_len == 30) {
+         data_len = 0;
+         for(int i=0; i<30;i++){
+           std::cout <<"get data"<< data[i] << std::endl;
+         }
+         //char getThetaArray[4] = {0};
+         //memcpy(getThetaArray,&data[17],4);
+          getTheta = *((float *)(&data[17]));
+
+         //std::cout <<" "<< getTheta << std::endl;
+         ROS_INFO("[wc_chassis] cc getTheta = %lf",getTheta);
+
+         long long getCounts = *((long long *)(&data[21]));
+         //std::cout <<"cc getCounts = "<< getCounts << std::endl;
+         ROS_INFO("[wc_chassis] cc getCounts = %d",getCounts);
+         counts_rear_ = getCounts;
+    }else {
+        return false;
+    }
+
+    //comunication();
     if (first_odo_) {
       odom_x_ = 0;
       odom_y_ = 0;
       odom_a_ = 0;
 
-      last_counts_front_ = counts_front_;
+     // last_counts_front_ = counts_front_;
       last_counts_rear_ = counts_rear_;
-      if ((abs(last_counts_front_) > 0) && (abs(last_counts_rear_) > 0)) {
+      if ((abs(last_counts_rear_) > 0)) {
         first_odo_ = false;
       }
       return false;
     }
 
-    int delta_counts_front = (counts_front_ - last_counts_front_);
+
+
+
+   // int delta_counts_front = (counts_front_ - last_counts_front_);
     int delta_counts_rear = (counts_rear_ - last_counts_rear_);
 
-    if (delta_counts_front > 10000) {
-      delta_counts_front -= 65536;
-    } else if (delta_counts_front < -10000) {
-      delta_counts_front += 65536;
-    }
-    if (delta_counts_rear > 10000) {
+//    if (delta_counts_front > 20000) {
+//      delta_counts_front -= 65536;
+//    } else if (delta_counts_front < -20000) {
+//      delta_counts_front += 65536;
+//    }
+    if (delta_counts_rear > 20000) {
       delta_counts_rear -= 65536;
-    } else if (delta_counts_rear < -10000) {
+    } else if (delta_counts_rear < -20000) {
       delta_counts_rear += 65536;
     }
 
 
-    if (abs(delta_counts_rear) > 2000) {
+    if (abs(delta_counts_rear) > 20000) {
       std::cout << "err delta_counts_rear: " << delta_counts_rear << std::endl;
     }
-    if (abs(delta_counts_front) > 2000) {
-      std::cout << "err delta_counts_front: " << delta_counts_front << std::endl;
-    }
+//    if (abs(delta_counts_front) > 20000) {
+//      std::cout << "err delta_counts_front: " << delta_counts_front << std::endl;
+//    }
 
+    std::cout << "delta_counts_rear: " << delta_counts_rear << std::endl;
 
-    double speed = 0.0;
     double angle = 0.0;
 
-    angle = static_cast<double>(delta_counts_front * M_PI_2) / FCounts_;  // 200000;  // 81920
-    speed = static_cast<double>(Dia_B_ * delta_counts_rear * M_PI) / RCounts_ * 10;  // 200000;  // 81920
+    angle = static_cast<double>(getTheta * M_PI_2) / 90;  // 200000;  // 81920
+    std::cout <<"angle = %lf"<< angle << std::endl;
+
+    v = static_cast<double>(delta_counts_rear * M_PI * Dia_B_ ) / RCounts_ / 40.0 / DeltaT_;  // 200000;  // 81920
+    w = tan(angle) * v / H_;
 
 
-    double dd = 0.1 * speed * cos(angle);
-    double da = 0.1 * speed * sin(angle) / H_;
+    double dd = DeltaT_ * v;
+    double da = DeltaT_ * w;
 
     odom_a_ += da;
     odom_x_ += dd * cos(odom_a_);
@@ -153,7 +175,7 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a) {
 
     return true;
 }
-int Chassis_mcu::getFPos()
+void Chassis_mcu::getPos()
 {
   unsigned char send[1024] = {0};
   int len = 0;
@@ -161,7 +183,7 @@ int Chassis_mcu::getFPos()
   unsigned char rec[1024] = {0};
   int rlen = 0;
 
-  CreateRPos(send, &len, 0);
+  CreateRPos(send, &len, 0); //0表示读取数据 ; type=0x83表示码盘值
 
   if (transfer) {
     transfer->Send_data(send, len);
@@ -172,41 +194,13 @@ int Chassis_mcu::getFPos()
     for (int i = 0; i < rlen; ++i) {
       if (IRQ_CH(rec[i])) {
         counts_front_ = GetPos(0);
-        return GetDelta(0);
+        counts_rear_  = GetPos(1);
       }
     }
   }
-  return delta_counts_front_;
 }
 
-int Chassis_mcu::getRPos()
-{
-  unsigned char send[1024] = {0};
-  int len = 0;
-
-  unsigned char rec[1024] = {0};
-  int rlen = 0;
-
-  CreateRPos(send, &len, 1);
-
-  if (transfer) {
-    transfer->Send_data(send, len);
-    transfer->Read_data(rec, rlen, 15, 500);
-  }
-
-  if (rlen == 15) {
-    for (int i = 0; i < rlen; ++i) {
-      if (IRQ_CH(rec[i])) {
-        counts_rear_ = GetPos(1);
-        return GetDelta(1);
-      }
-    }
-  }
-  return delta_counts_rear_;
-}
 void Chassis_mcu::comunication(void) {
-  delta_counts_front_ = getFPos();
-  usleep(1000);
-  delta_counts_rear_ = getRPos();
+  getPos();
   usleep(1000);
 }

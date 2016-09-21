@@ -88,10 +88,8 @@ typedef struct _Current
 
 typedef struct _Pos
 {
-  int system_time;
-  int axis_id;
-  int position;
-
+  int Fposition;
+  int Rposition;
 }PosProtocol;
 
 typedef struct _Angle

@@ -4,9 +4,46 @@
 #include "chassis.h"
 #include "tf/tf.h"
 #include <tf/transform_broadcaster.h>
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/Imu.h>
+#include <std_msgs/UInt32.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/Int32.h>
+#include <tf/message_filter.h>
+#include <tf/transform_broadcaster.h>
+#include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_msgs/KeyValue.h>
+#include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Range.h>
+#include <autoscrubber_services/StopScrubber.h>
+#include <autoscrubber_services/StartRotate.h>
+#include <autoscrubber_services/StopRotate.h>
+#include <autoscrubber_services/CheckRotate.h>
+#include <autoscrubber_services/CheckHardware.h>
+#include <autoscrubber_services/ProtectorSwitch.h>
+#include <autoscrubber_services/UltrasonicSwitch.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <pthread.h>
+#include <sched.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <vector>
 
-tf::TransformBroadcaster odom_broadcaster;
+tf::TransformBroadcaster *odom_broadcaster;
 ros::Publisher  odom_pub;
+ros::Rate *p_loop_rate;
+
+Chassis_mcu *g_chassis_mcu;
+SerialPort *transfer;
+
+ char data[1024] = {0};
+int data_len=0;
 
 double g_odom_x   = 0.0;
 double g_odom_y   = 0.0;
@@ -20,6 +57,7 @@ float Dia_B = 0.0;
 float Axle  = 0.0;
 int FCounts  = 0;
 int RCounts  = 0;
+float   DeltaT= 0.1;
 
 void publishOdom(void){
   nav_msgs::Odometry odom;
@@ -59,39 +97,45 @@ void publishOdom(void){
   tf::quaternionMsgToTF(odom.pose.pose.orientation, q);
   tf::Transform odom_meas(q, tf::Vector3(odom.pose.pose.position.x, odom.pose.pose.position.y, 0));
   tf::StampedTransform odom_transform(odom_meas, ros::Time::now(), "base_odom", "base_link");
-  odom_broadcaster.sendTransform(odom_transform);
+  odom_broadcaster->sendTransform(odom_transform);
 }
 
-void initParam(void)
-{
-    ros::NodeHandle nh("~");
-    odom_pub  = nh.advertise<nav_msgs::Odometry>("odom", 50);
-    nh.param("F_DIA", Dia_F, static_cast<float>(0.223));
-    nh.param("B_DIA", Dia_B, static_cast<float>(0.3));
-    nh.param("H", H, static_cast<float>(0.92));
-    nh.param("AXLE", Axle, static_cast<float>(0.715));
-    nh.param("front_counts", FCounts, 4000);
-    nh.param("rear_counts", RCounts, 4000);
-}
+
 
 int main(int argc, char **argv)
 {
 
  ros::init(argc, argv, "wc_chassis");
- ros::Rate loop(10);
- initParam();
- Chassis_mcu g_chassis_mcu;
- g_chassis_mcu.Init(H,Dia_F,Dia_B,Axle,FCounts,RCounts);
+ ros::NodeHandle nh;
+ odom_pub  = nh.advertise<nav_msgs::Odometry>("odom", 50);
+ nh.param("F_DIA", Dia_F, static_cast<float>(0.41));
+ nh.param("B_DIA", Dia_B, static_cast<float>(0.41));
+ nh.param("H", H, static_cast<float>(0.58));
+ nh.param("AXLE", Axle, static_cast<float>(0.615));
+// nh.param("front_counts", FCounts, 4000);
+ nh.param("rear_counts", RCounts, 5000);
+ nh.param("delta_time", DeltaT, static_cast<float>(0.1));
+ odom_broadcaster = new tf::TransformBroadcaster();
+ p_loop_rate =  new ros::Rate(10);
+
+
+ g_chassis_mcu = new Chassis_mcu();
+
+ transfer  = new SerialPort();
+
+ transfer->Init(115200);
+ g_chassis_mcu->Init(H,Dia_F,Dia_B,Axle,FCounts,RCounts,DeltaT);
 
  while (ros::ok()) {
 
-     g_chassis_mcu.getOdo(g_odom_x, g_odom_y, g_odom_tha);
-     g_chassis_mcu.getCSpeed(g_odom_v, g_odom_w);
+     //transfer->Read_data(data,data_len,30,50);
+
+     g_chassis_mcu->getOdo(g_odom_x, g_odom_y, g_odom_tha,g_odom_v, g_odom_w);
 
      publishOdom();
 
      ros::spinOnce();
-     loop.sleep();
+     p_loop_rate->sleep();
  }
   return 0;
 }
@@ -99,7 +143,7 @@ int main(int argc, char **argv)
 
 
 
-//测试
+////测试
 //SerialPort* transfer_l_;
 //int main()
 //{

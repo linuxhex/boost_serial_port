@@ -121,12 +121,12 @@ int Coder(unsigned char* ch,int* len,AGVProtocol* protol,Data* data){
     switch(protol->type){
         case CURRENT:
             break;
-        case POS:
-            protol->data.pos_.system_time = data->pos_.system_time;
-            protol->data.pos_.axis_id = data->pos_.axis_id;
-            protol->data.pos_.position = data->pos_.position;
-            protol->len = sizeof(PosProtocol);
-            break;
+//        case POS:
+//            protol->data.pos_.system_time = data->pos_.system_time;
+//            protol->data.pos_.axis_id = data->pos_.axis_id;
+//            protol->data.pos_.position = data->pos_.position;
+//            protol->len = sizeof(PosProtocol);
+//            break;
         case TIME:
             break;
         case DO:
@@ -144,7 +144,6 @@ int Coder(unsigned char* ch,int* len,AGVProtocol* protol,Data* data){
         case RSPEED:
             break;
         case RPOS:
-            protol->data.r_pos_.system_time = data->r_pos_.system_time;
             protol->data.r_pos_.axis_id = data->r_pos_.axis_id;
             protol->len = sizeof(RPosProtocol);
             break;
@@ -175,13 +174,8 @@ int Decoder(AGVProtocol* protol,unsigned char* ch,int len){
         case CURRENT:
             break;
         case POS:
-            if (protol->data.pos_.axis_id == 0){
-                m_front_delta = protol->data.pos_.position;
-                m_front_pos = protol->data.pos_.system_time;
-            }else if (protol->data.pos_.axis_id == 1){
-                m_rear_delta = protol->data.pos_.position;
-                m_rear_pos = protol->data.pos_.system_time;
-            }
+                m_front_pos = protol->data.pos_.Fposition;
+                m_rear_pos  = protol->data.pos_.Rposition;
             break;
         case TIME:
             break;
@@ -221,17 +215,15 @@ void CreateDO(unsigned char* ch,int* len,int id,unsigned int usdo){
   Coder(ch,len,&sendProtocol,&data);
 }
 
-void CreatePos(unsigned char* ch,int* len,int id,int pos){
-    Data data;
+//void CreatePos(unsigned char* ch,int* len,int id,int pos){
+//    Data data;
 
-    data.pos_.system_time = 0xffffffff;
-    data.pos_.axis_id = id;
-    data.pos_.position = pos;
+//    data.pos_.axis_id = id;
 
-    SInit_Proto(&sendProtocol,POS);
+//    SInit_Proto(&sendProtocol,POS);
 
-    Coder(ch,len,&sendProtocol,&data);
-}
+//    Coder(ch,len,&sendProtocol,&data);
+//}
 void CreateDA(unsigned char* ch,int* len,int id,float v){
   unsigned int i_value = (v / 5.0) * 0x000fff ;
   i_value &= 0x000fff;
@@ -248,9 +240,8 @@ void CreateDA(unsigned char* ch,int* len,int id,float v){
 }
 
 void CreateRPos(unsigned char* ch,int* len,int id){
-    Data data;
 
-    data.r_pos_.system_time = 0xffffffff;
+    Data data;
     data.r_pos_.axis_id = id;
 
     SInit_Proto(&sendProtocol,RPOS);

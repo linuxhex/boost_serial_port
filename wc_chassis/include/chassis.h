@@ -4,23 +4,21 @@
 #include <string>
 #include <map>
 
-class SerialPort;
+//class SerialPort;
 
 class Chassis_mcu{
 public:
     Chassis_mcu();
     ~Chassis_mcu();
 
-    void Init(float,float,float,float,int,int);
-    bool getOdo(double &x,double &y,double &a);
+    void Init(float,float,float,float,int,int,float);
+    bool getOdo(double &x,double &y,double &a,double &v, double &w);
     void comunication(void);
-    bool getCSpeed(double &v, double &w);
 
 private:
     bool is_auto_;
 
-    int getFPos();
-    int getRPos();
+    void getPos();
     int delta_counts_front_;
     int delta_counts_rear_;
 
@@ -32,9 +30,10 @@ private:
     float Axle_;
     int FCounts_;
     int RCounts_;
+    float DeltaT_;
     int reduction_ratio_;
 
-    SerialPort* transfer = NULL;
+    //SerialPort* transfer = NULL;
 
     bool first_odo_;
     double odom_x_;
@@ -44,11 +43,11 @@ private:
     double odom_w;
 
     int last_counts_front_;
-    int last_counts_rear_;
+    long long last_counts_rear_;
     int last_delta_counts_front_;
     int last_delta_counts_rear_;
     int counts_front_;
-    int counts_rear_;
+    long long counts_rear_;
 
     unsigned char send_[10];
     unsigned char rec_[20];
