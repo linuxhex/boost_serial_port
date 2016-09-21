@@ -100,9 +100,9 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
         //std::cout<<"[wc_chassis] cc i ="<< i <<"data[i]" <<data[i]<<std::endl;
         if(data[i] == 0xab){
             m_lReadBuffer.move(i+1);
-            if (i >= 29) {
-               data_len  = 30;
-               for(int j=0,k=i-29;k<=i;k++,j++){
+            if (i >= SERIAL_BYTE_LEN-1) {
+               data_len  = SERIAL_BYTE_LEN;
+               for(int j=0,k=i-(SERIAL_BYTE_LEN-1);k<=i;k++,j++){
                    if(j == k)break;
                    data[j] = data[k];
                }

@@ -1,5 +1,7 @@
-#ifndef _BYTE_LIST_WANGHONGTAO_2014_08_30_
-#define _BYTE_LIST_WANGHONGTAO_2014_08_30_
+#ifndef _BYTE_LIST_WANGHONGTAO_
+#define _BYTE_LIST_WANGHONGTAO_
+
+#define SERIAL_BYTE_LEN (34) //串口接受数据的长度
 
 
 class ByteList{

@@ -11,6 +11,7 @@ public:
 
     void Init(float,float,float,float,int,float);
     bool getOdo(double &x,double &y,double &a,double &v, double &w);
+    bool getGps(double &north,double &east,bool &valid,float &compass);
 
 private:
     bool is_auto_;
@@ -27,6 +28,7 @@ private:
     int reduction_ratio_;
 
     bool first_odo_;
+    bool first_gps_;
     double odom_x_;
     double odom_y_;
     double odom_a_;

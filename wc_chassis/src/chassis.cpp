@@ -1,6 +1,5 @@
 #include "chassis.h"
 #include "SPort.h"
-#include "protocol.h"
 #include <ros/ros.h>
 extern SerialPort *transfer;
 extern unsigned char data[1024];
@@ -8,11 +7,11 @@ extern int data_len;
 
 Chassis_mcu::Chassis_mcu()
 {
+    this->first_odo_ = true;
+    this->first_gps_ = true;
 }
 
-Chassis_mcu::~Chassis_mcu()
-{
-}
+Chassis_mcu::~Chassis_mcu(){}
 
 void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle,int RCounts,float DeltaT)
 {
@@ -54,13 +53,13 @@ void Chassis_mcu::Init(float H,float Dia_F, float Dia_B, float Axle,int RCounts,
 
 
 
-bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w) {
-
+bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w)
+{
 
     float getTheta;
    // ROS_INFO("[wc_chassis] cc data_len = %d",data_len);
 
-    if (data_len == 30) {
+    if (data_len == SERIAL_BYTE_LEN) {
          data_len = 0;
          //char getThetaArray[4] = {0};
          //memcpy(getThetaArray,&data[17],4);
@@ -106,7 +105,8 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w) {
 
     double angle = 0.0;
     angle = static_cast<double>(getTheta * M_PI_2) / 90;
-    std::cout <<"angle = %lf"<< angle << std::endl;
+    std::cout <<"angle = "<< angle << std::endl;
+    std::cout <<"delta_counts_rear = "<< delta_counts_rear << std::endl;
 
     v = static_cast<double>(delta_counts_rear * M_PI * Dia_B_ ) / RCounts_ / 4.0 / DeltaT_;
     w = tan(angle) * v / H_;
@@ -136,3 +136,61 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w) {
     return true;
 }
 
+bool Chassis_mcu::getGps(double &north,double &east, bool &valid,float &compass)
+{
+   static double m_deg_to_rad=0.01745329251994;
+   static double constants_radius_of_earth=6371000;
+
+   static double Ref_lat_rad;
+   static double Ref_lon_rad;
+   static double Ref_sin_lat;
+   static double Ref_cos_lat;
+
+   compass = *((float *)(&data[29])) / 180 * M_PI;
+   std::cout << "gps compass = " << compass << std::endl;
+
+   double lat = *((double *)(&data[1]));
+   double lon = *((double *)(&data[9]));
+
+   std::cout << "gps lat = " << lat << std::endl;
+   std::cout << "gps lon = " << lon << std::endl;
+
+   if((lat < DBL_EPSILON) && (lon < DBL_EPSILON)){
+       valid = false;
+       return false;
+   }else{
+       valid = true;
+   }
+
+   if(first_gps_){
+       Ref_lat_rad = lat * m_deg_to_rad;
+       Ref_lon_rad=  lon * m_deg_to_rad;
+       Ref_sin_lat= sin(Ref_lat_rad);
+       Ref_cos_lat= cos(Ref_lat_rad);
+       first_gps_ = false;
+       return false;
+   }
+
+   double lat_rad =  lat * m_deg_to_rad;
+   double lon_rad =  lon * m_deg_to_rad;
+
+   double sin_lat   = sin(lat_rad);
+   double cos_lat   = cos(lat_rad);
+   double cos_d_lon = cos(lon_rad - Ref_lon_rad);
+   double c = acos(Ref_sin_lat * sin_lat + Ref_cos_lat * cos_lat * cos_d_lon);
+
+   double k;
+   if(fabs(c) < DBL_EPSILON){
+       k=1.0;
+   }else {
+       k=(c/sin(c));
+   }
+
+   north = k * (Ref_cos_lat * sin_lat - Ref_sin_lat * cos_lat * cos_d_lon) * constants_radius_of_earth;
+   east  = k * cos_lat * sin(lon_rad - Ref_lon_rad) * constants_radius_of_earth;
+
+   std::cout << "gps north = " << north << std::endl;
+   std::cout << "gps east = " << east << std::endl;
+
+   return true;
+}

@@ -28,15 +28,18 @@
 #include <sstream>
 #include <vector>
 
+
 tf::TransformBroadcaster *odom_broadcaster;
 ros::Publisher  odom_pub;
+ros::Publisher  gps_pub;
+
 ros::Rate *p_loop_rate;
 
 Chassis_mcu *g_chassis_mcu;
 SerialPort *transfer;
 
- char data[1024] = {0};
-int data_len=0;
+char data[1024] = {0};
+int  data_len = 0;
 
 double g_odom_x   = 0.0;
 double g_odom_y   = 0.0;
@@ -44,12 +47,17 @@ double g_odom_tha = 0.0;
 double g_odom_v   = 0.0;
 double g_odom_w   = 0.0;
 
+double north   = 0.0;
+double east    = 0.0;
+bool   valid   = 0.0;
+float  compass = 0.0;
+
 float H        = 0.0;
 float Dia_F    = 0.0;
 float Dia_B    = 0.0;
 float Axle     = 0.0;
 int   RCounts  = 0;
-float   DeltaT = 0.1;
+float DeltaT   = 0.1;
 
 void publishOdom(void){
   nav_msgs::Odometry odom;
@@ -92,7 +100,45 @@ void publishOdom(void){
   odom_broadcaster->sendTransform(odom_transform);
 }
 
+void publishGps(void){
+  nav_msgs::Odometry odom;
+  odom.header.stamp = ros::Time::now();;
 
+  odom.header.frame_id = "base_odom";
+  // set the position
+  odom.pose.pose.position.x = north;     //gps 北
+  odom.pose.pose.position.y = east;      //gps 东
+  if(valid){
+    odom.pose.pose.position.z = 1.0;     //有效
+  }else{
+    odom.pose.pose.position.z = 0.0;     //无效
+  }
+  int i;
+  for (i = 0; i < 36; i++) odom.pose.covariance.elems[i] = 0.0;
+  odom.pose.covariance.elems[0]  = 1.0;
+  odom.pose.covariance.elems[7]  = 1.0;
+  odom.pose.covariance.elems[14] = 1.0;
+  odom.pose.covariance.elems[21] = 1.0;
+  odom.pose.covariance.elems[28] = 1.0;
+  odom.pose.covariance.elems[35] = 1.0;
+
+  for (i = 0; i < 36; i++) odom.twist.covariance.elems[i] = 0.0;
+  odom.twist.covariance.elems[0]  = 1.0;
+  odom.twist.covariance.elems[7]  = 1.0;
+  odom.twist.covariance.elems[14] = 1.0;
+  odom.twist.covariance.elems[21] = 1.0;
+  odom.twist.covariance.elems[28] = 1.0;
+  odom.twist.covariance.elems[35] = 1.0;
+
+  odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(g_odom_tha);
+
+  odom.child_frame_id = "base_link";
+  odom.twist.twist.linear.x  = compass;
+  odom.twist.twist.linear.y  = 0;
+  odom.twist.twist.angular.z = 0;
+  gps_pub.publish(odom);
+
+}
 
 int main(int argc, char **argv)
 {
@@ -100,6 +146,8 @@ int main(int argc, char **argv)
  ros::init(argc, argv, "wc_chassis");
  ros::NodeHandle nh;
  odom_pub  = nh.advertise<nav_msgs::Odometry>("odom", 50);
+ gps_pub   = nh.advertise<nav_msgs::Odometry>("gps", 50);
+
  nh.param("F_DIA", Dia_F, static_cast<float>(0.46));
  nh.param("B_DIA", Dia_B, static_cast<float>(0.46));
  nh.param("H", H, static_cast<float>(0.58));
@@ -118,8 +166,10 @@ int main(int argc, char **argv)
  while (ros::ok()) {
 
      g_chassis_mcu->getOdo(g_odom_x, g_odom_y, g_odom_tha,g_odom_v, g_odom_w);
+     g_chassis_mcu->getGps(north, east, valid, compass);
 
      publishOdom();
+     publishGps();
 
      ros::spinOnce();
      p_loop_rate->sleep();
