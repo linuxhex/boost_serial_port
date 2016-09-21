@@ -18,13 +18,6 @@
 #include <diagnostic_msgs/KeyValue.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Range.h>
-#include <autoscrubber_services/StopScrubber.h>
-#include <autoscrubber_services/StartRotate.h>
-#include <autoscrubber_services/StopRotate.h>
-#include <autoscrubber_services/CheckRotate.h>
-#include <autoscrubber_services/CheckHardware.h>
-#include <autoscrubber_services/ProtectorSwitch.h>
-#include <autoscrubber_services/UltrasonicSwitch.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -51,13 +44,12 @@ double g_odom_tha = 0.0;
 double g_odom_v   = 0.0;
 double g_odom_w   = 0.0;
 
-float H     = 0.0;
-float Dia_F = 0.0;
-float Dia_B = 0.0;
-float Axle  = 0.0;
-int FCounts  = 0;
-int RCounts  = 0;
-float   DeltaT= 0.1;
+float H        = 0.0;
+float Dia_F    = 0.0;
+float Dia_B    = 0.0;
+float Axle     = 0.0;
+int   RCounts  = 0;
+float   DeltaT = 0.1;
 
 void publishOdom(void){
   nav_msgs::Odometry odom;
@@ -108,27 +100,22 @@ int main(int argc, char **argv)
  ros::init(argc, argv, "wc_chassis");
  ros::NodeHandle nh;
  odom_pub  = nh.advertise<nav_msgs::Odometry>("odom", 50);
- nh.param("F_DIA", Dia_F, static_cast<float>(0.41));
- nh.param("B_DIA", Dia_B, static_cast<float>(0.41));
+ nh.param("F_DIA", Dia_F, static_cast<float>(0.46));
+ nh.param("B_DIA", Dia_B, static_cast<float>(0.46));
  nh.param("H", H, static_cast<float>(0.58));
  nh.param("AXLE", Axle, static_cast<float>(0.615));
-// nh.param("front_counts", FCounts, 4000);
  nh.param("rear_counts", RCounts, 5000);
  nh.param("delta_time", DeltaT, static_cast<float>(0.1));
+
  odom_broadcaster = new tf::TransformBroadcaster();
  p_loop_rate =  new ros::Rate(10);
-
-
  g_chassis_mcu = new Chassis_mcu();
-
  transfer  = new SerialPort();
 
  transfer->Init(115200);
- g_chassis_mcu->Init(H,Dia_F,Dia_B,Axle,FCounts,RCounts,DeltaT);
+ g_chassis_mcu->Init(H,Dia_F,Dia_B,Axle,RCounts,DeltaT);
 
  while (ros::ok()) {
-
-     //transfer->Read_data(data,data_len,30,50);
 
      g_chassis_mcu->getOdo(g_odom_x, g_odom_y, g_odom_tha,g_odom_v, g_odom_w);
 
@@ -139,23 +126,3 @@ int main(int argc, char **argv)
  }
   return 0;
 }
-
-
-
-
-////测试
-//SerialPort* transfer_l_;
-//int main()
-//{
-//    transfer_l_ = new SerialPort();
-//    transfer_l_->Init(115200);
-
-//    unsigned char ss[5]={'1','2','3','4'};
-
-//    while(1){
-//        sleep(1);
-//        transfer_l_->Send_data(ss,4);
-//        std::cout << transfer_l_ << std::endl;
-//    }
-
-//}

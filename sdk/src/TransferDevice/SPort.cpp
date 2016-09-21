@@ -9,16 +9,13 @@ extern int data_len;
 using namespace boost;
 using namespace boost::asio;
 
-
 SerialPort::SerialPort()
 {
     m_pSerialPort = NULL;
     m_threadRun = NULL;
-
     m_lReadBuffer.Init(1024);
     memset(m_szWriteBuffer,0,1024);
     m_nWriteBufferSize = 0;
-    //LOGS("SSS").Enable();
 }
 
 SerialPort::~SerialPort()
@@ -56,7 +53,6 @@ bool SerialPort::open()
 
         return true;
     }catch (std::exception &e){
-        //LOGS("SerialPort")<<"Serial port open err!";
         std::cout<<"Open Serial Port Err!!!--"<<1<<std::endl;
         return false;
     }
@@ -82,29 +78,26 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
         std::cout<<"read data err"<<std::endl;
         return;
     }
-    //m_szReadCallBack.Write(m_szReadTemp,bytes_transferred);
-    //std::cout << "data" << m_szReadTemp << std::endl;
-    //int last_set = m_lReadBuffer.Size();
 
     m_lReadBuffer.Write(m_szReadTemp,bytes_transferred);
     int len = 0;
     m_lReadBuffer.Read(data,len);
-    std::cout<<"[wc_chassis] len ="<< len <<std::endl;
+    //std::cout<<"[wc_chassis] len ="<< len <<std::endl;
 
-    std::string str;
-    if(len>=30){
-       str = cComm::ByteToHexString(data,len);
-       std::cout<<" Read data :"<<str<<std::endl;
-    }
+//    std::string str;
+//    if(len>=30){
+//       str = cComm::ByteToHexString(data,len);
+//       std::cout<<" Read data :"<<str<<std::endl;
+//    }
 
-    str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
-    std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
+//    str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
+//    std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
 
-    str = cComm::ByteToHexString((unsigned char *)m_lReadBuffer.m_pBuffer,m_lReadBuffer.Size());
-    std::cout<<"Buff Read len:"<<m_lReadBuffer.Size()<<" data:"<<str<<std::endl;
+//    str = cComm::ByteToHexString((unsigned char *)m_lReadBuffer.m_pBuffer,m_lReadBuffer.Size());
+//    std::cout<<"Buff Read len:"<<m_lReadBuffer.Size()<<" data:"<<str<<std::endl;
 
     for(int i=0;i<len;i++){
-        std::cout<<"[wc_chassis] cc i ="<< i <<"data[i]" <<data[i]<<std::endl;
+        //std::cout<<"[wc_chassis] cc i ="<< i <<"data[i]" <<data[i]<<std::endl;
         if(data[i] == 0xab){
             m_lReadBuffer.move(i+1);
             if (i >= 29) {
@@ -117,10 +110,6 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
             break;
         }
     }
-
-    //str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
-    //std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
-
     read();
 }
 void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout )
@@ -143,7 +132,6 @@ void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout 
         }
     }
     m_lReadBuffer.Read(r_data,len);
- //   m_lReadBuffer.Clear();
 }
 
 int SerialPort::ThreadRun()
@@ -181,12 +169,10 @@ bool SerialPort::BeginThread()
 void SerialPort::EndThread()
 {
 
-    if (m_threadRun != NULL)
-    {
+    if (m_threadRun != NULL){
         m_ios.stop();
         m_threadRun->interrupt();
         m_threadRun->join();
-
         delete m_threadRun;
         m_threadRun = NULL;
     }
@@ -195,10 +181,10 @@ void SerialPort::EndThread()
 
 void SerialPort::read()
 {
-    //std::cout << "m_szReadTemp" << m_szReadTemp << std::endl;
     m_pSerialPort->async_read_some(boost::asio::buffer(m_szReadTemp,1024),
-        boost::bind(&SerialPort::read_callback,this,
-        boost::asio::placeholders::error,   boost::asio::placeholders::bytes_transferred));
+                                   boost::bind(&SerialPort::read_callback,this,
+                                   boost::asio::placeholders::error,
+                                   boost::asio::placeholders::bytes_transferred));
 }
 
 void SerialPort::write()
@@ -209,7 +195,5 @@ void SerialPort::write()
 void SerialPort::Init(int CommNO)
 {
     nCommNO = CommNO;
-    std::cout << "SerialPort::Init" << std::endl;
-
     BeginThread();
 }

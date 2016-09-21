@@ -5,8 +5,8 @@
 #include "string.h"
 #include "buffer.h"
 
-void Init(BufList* list,int iLen){
-
+void Init(BufList* list,int iLen)
+{
     if (list->m_pBuffer != NULL){
         delete list->m_pBuffer;
         list->m_pBuffer = NULL;
@@ -15,19 +15,23 @@ void Init(BufList* list,int iLen){
     memset(list->m_pBuffer,0,iLen);
     list->m_iMax = iLen;
 }
-void Des(BufList* list){
+
+void Des(BufList* list)
+{
     if (list->m_pBuffer != NULL){
         free(list->m_pBuffer);
         list->m_pBuffer = NULL;
     }
 }
-int Size(BufList* list){
+
+int Size(BufList* list)
+{
     return list->m_iOffset;
 }
-int Write(BufList* list,unsigned char* pWrite,int len){
 
+int Write(BufList* list,unsigned char* pWrite,int len)
+{
     if (list->m_pBuffer == NULL){
-        //LOGS_ERROR("TransferDevice")<<"write bufferP is null :"<<len;
         return 0;
     }
     if ( len > (list->m_iMax - list->m_iOffset) ){
@@ -38,7 +42,8 @@ int Write(BufList* list,unsigned char* pWrite,int len){
 
     list->m_iOffset+=len;
     return len;
-};
+}
+
 int Read(BufList* list,unsigned char* pRead,int* len){
 
     if(list->m_iOffset>0){
@@ -56,23 +61,26 @@ int Read(BufList* list,unsigned char* pRead,int* len){
     }
     return 0;
 }
-void Clear(BufList* list){
+
+void Clear(BufList* list)
+{
 
     if (list->m_pBuffer != NULL){
         memset(list->m_pBuffer,0,list->m_iMax);
     }
     list->m_iOffset = 0;
 }
-int IsPull(BufList* list){
 
+int IsPull(BufList* list)
+{
    if (list->m_iOffset == list->m_iMax ){
         return 1;
     }else{
         return 0;
     }
 }
-void Print(BufList* list){
-
+void Print(BufList* list)
+{
   std::cout<<"buf size:"<<(int)list->m_iOffset;
   for(int i = 0;i < list->m_iOffset; ++i){
     std::cout<<"buf["<<i<<"]:"<<(int)list->m_pBuffer[i];
