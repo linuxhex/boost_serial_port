@@ -82,22 +82,11 @@ void SerialPort::read_callback( const boost::system::error_code& error, std::siz
     m_lReadBuffer.Write(m_szReadTemp,bytes_transferred);
     int len = 0;
     m_lReadBuffer.Read(data,len);
-    //std::cout<<"[wc_chassis] len ="<< len <<std::endl;
-
-//    std::string str;
-//    if(len>=30){
-//       str = cComm::ByteToHexString(data,len);
-//       std::cout<<" Read data :"<<str<<std::endl;
-//    }
-
-//    str = cComm::ByteToHexString(m_szReadTemp,bytes_transferred);
-//    std::cout<<"SSSS Read len:"<<bytes_transferred<<" data:"<<str<<std::endl;
 
 //    str = cComm::ByteToHexString((unsigned char *)m_lReadBuffer.m_pBuffer,m_lReadBuffer.Size());
 //    std::cout<<"Buff Read len:"<<m_lReadBuffer.Size()<<" data:"<<str<<std::endl;
 
     for(int i=0;i<len;i++){
-        //std::cout<<"[wc_chassis] cc i ="<< i <<"data[i]" <<data[i]<<std::endl;
         if(data[i] == 0xab){
             m_lReadBuffer.move(i+1);
             if (i >= SERIAL_BYTE_LEN-1) {
@@ -121,13 +110,11 @@ void SerialPort::Read_data( unsigned char* r_data,int &len,int need,int timeout 
     while(1){
         len_tmp = m_lReadBuffer.Size();
         if ( len_tmp >= need){
-            //std::cout<<"read data over"<<std::endl;
             break;
         }
         if (read_count--){
             usleep(10000);
         }else{
-            std::cout<<"time out"<<std::endl;
             break;
         }
     }

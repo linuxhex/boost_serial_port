@@ -124,7 +124,7 @@ int cComm::HexStringToByte(unsigned char** pChar,int& iLen,string strHex) {
       char ch[1] = {0};
       memcpy(ch,(*it).c_str(),1);
       if ((ch[0] >='0') && (ch[0] <='9'))
-        (*pChar)[index] = ch[0] - 48;//�ַ�0��ASCIIֵΪ48
+        (*pChar)[index] = ch[0] - 48;
       else if ((ch[0]>='a') && (ch[0]<='f'))
         (*pChar)[index] =ch[0] -'a' + 10;
       else if ((ch[0]>='A') && (ch[0]<='F'))
@@ -135,7 +135,7 @@ int cComm::HexStringToByte(unsigned char** pChar,int& iLen,string strHex) {
       char ch[1] = {0};
       memcpy(ch,(*it).c_str(),1);
       if ((ch[0] >='0') && (ch[0] <='9'))
-        (*pChar)[index] = ch[0] - 48;//�ַ�0��ASCIIֵΪ48
+        (*pChar)[index] = ch[0] - 48;
       else if ((ch[0]>='a') && (ch[0]<='f'))
         (*pChar)[index] = ch[0] -'a' + 10;
       else if ((ch[0]>='A') && (ch[0]<='F'))
@@ -144,7 +144,7 @@ int cComm::HexStringToByte(unsigned char** pChar,int& iLen,string strHex) {
       ch[0] = 0 ;
       memcpy(ch,(*it).c_str()+1,1);
       if ((ch[0] >='0') && (ch[0] <='9'))
-        (*pChar)[index] = (*pChar)[index]*16 + (ch[0] - 48);//�ַ�0��ASCIIֵΪ48
+        (*pChar)[index] = (*pChar)[index]*16 + (ch[0] - 48);
       else if ((ch[0]>='a') && (ch[0]<='f'))
         (*pChar)[index] = (*pChar)[index]*16 + (ch[0] -'a' + 10);
       else if ((ch[0]>='A') && (ch[0]<='F'))

@@ -28,7 +28,6 @@
 #include <sstream>
 #include <vector>
 
-
 tf::TransformBroadcaster *odom_broadcaster;
 ros::Publisher  odom_pub;
 ros::Publisher  gps_pub;
@@ -156,9 +155,9 @@ int main(int argc, char **argv)
  nh.param("delta_time", DeltaT, static_cast<float>(0.1));
 
  odom_broadcaster = new tf::TransformBroadcaster();
- p_loop_rate =  new ros::Rate(10);
- g_chassis_mcu = new Chassis_mcu();
- transfer  = new SerialPort();
+ p_loop_rate      = new ros::Rate(10);
+ g_chassis_mcu    = new Chassis_mcu();
+ transfer         = new SerialPort();
 
  transfer->Init(115200);
  g_chassis_mcu->Init(H,Dia_F,Dia_B,Axle,RCounts,DeltaT);

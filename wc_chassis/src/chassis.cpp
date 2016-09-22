@@ -57,21 +57,12 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w)
 {
 
     float getTheta;
-   // ROS_INFO("[wc_chassis] cc data_len = %d",data_len);
 
     if (data_len == SERIAL_BYTE_LEN) {
          data_len = 0;
-         //char getThetaArray[4] = {0};
-         //memcpy(getThetaArray,&data[17],4);
           getTheta = *((float *)(&data[17]));
-
-         //std::cout <<" "<< getTheta << std::endl;
-         //ROS_INFO("[wc_chassis] cc getTheta = %lf",getTheta);
-
-         long long getCounts = *((long long *)(&data[21]));
-         //std::cout <<"cc getCounts = "<< getCounts << std::endl;
-         //ROS_INFO("[wc_chassis] cc getCounts = %d",getCounts);
-         counts_rear_ = getCounts;
+          long long getCounts = *((long long *)(&data[21]));
+          counts_rear_ = getCounts;
     }else {
         return false;
     }
@@ -80,7 +71,6 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w)
       odom_x_ = 0;
       odom_y_ = 0;
       odom_a_ = 0;
-
       last_counts_rear_ = counts_rear_;
       if ((abs(last_counts_rear_) > 0)) {
         first_odo_ = false;
@@ -96,21 +86,13 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w)
       delta_counts_rear += 65536;
     }
 
-
     if (abs(delta_counts_rear) > 20000) {
       std::cout << "err delta_counts_rear: " << delta_counts_rear << std::endl;
     }
 
-    //std::cout << "delta_counts_rear: " << delta_counts_rear << std::endl;
-
-    double angle = 0.0;
-    angle = static_cast<double>(getTheta * M_PI_2) / 90;
-    std::cout <<"angle = "<< angle << std::endl;
-    std::cout <<"delta_counts_rear = "<< delta_counts_rear << std::endl;
-
+    double angle = static_cast<double>(getTheta * M_PI_2) / 90;
     v = static_cast<double>(delta_counts_rear * M_PI * Dia_B_ ) / RCounts_ / 4.0 / DeltaT_;
     w = tan(angle) * v / H_;
-
 
     double dd = DeltaT_ * v;
     double da = DeltaT_ * w;
@@ -118,7 +100,6 @@ bool Chassis_mcu::getOdo(double &x, double &y, double &a,double &v, double &w)
     odom_a_ += da;
     odom_x_ += dd * cos(odom_a_);
     odom_y_ += dd * sin(odom_a_);
-
 
     while (odom_a_ <= - M_PI) {
       odom_a_ += M_PI*2;
@@ -147,7 +128,6 @@ bool Chassis_mcu::getGps(double &north,double &east, bool &valid,float &compass)
    static double Ref_cos_lat;
 
    compass = *((float *)(&data[29])) / 180 * M_PI;
-   std::cout << "gps compass = " << compass << std::endl;
 
    double lat = *((double *)(&data[1]));
    double lon = *((double *)(&data[9]));
